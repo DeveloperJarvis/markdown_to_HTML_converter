@@ -69,7 +69,7 @@ def end_head_structure():
 # add_meta_tags(): Adds meta information such as character encoding,
 # viewport settings, etc.
 def add_meta_tags():
-    return '<meta charset="UTF-8">\n<meta name="veiwport" content="width=device-width, initial-scale=1.0">'
+    return '<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">'
 
 def start_body_structure():
     return "<body>"

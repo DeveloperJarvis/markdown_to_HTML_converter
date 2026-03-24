@@ -59,18 +59,25 @@ accordingly.
 # --------------------------------------------------
 
 # convert_headers(parsed_data): Convers parsed headers into <h1>, <h2>, etc.
-def convert_headers(parsed_data):
-    return "".join(parsed_data)
+def convert_headers(headers):
+    # return "".join(parsed_data)
+    # return parsed_data + "\n"
+    html = []
+    for h in headers:
+        html.append(
+            f"<h{h['level']}>{h['content']}</h{h['level']}>"
+        )
+    return "\n".join(html) + "\n"
 
 # convert_lists(parsed_data): Converts parsed list data into <ul> and <ol>,
 # <li> tags.
-def convert_lists(parsed_data):
+def convert_lists(lists_html):
     # lists are already wrapped into <ol> and <ul>, <li> tags
-    return parsed_data
+    return lists_html + "\n" if lists_html else ""
 
 # convert_paragraphs(parsed_data): Converts plain text into <p> tags.
-def convert_paragraphs(parsed_data):
-    return "".join(parsed_data)
+def convert_paragraphs(paragraphs_html):
+    return paragraphs_html + "\n" if paragraphs_html else ""
 
 # convert_inline_elements(parsed_data): Converts bold (** or __),
 # italic (* or _), and other inline elements into corresponding HTML

@@ -108,9 +108,10 @@ def read_markdown_file(file_path):
 # output to a file.
 def write_html_file(output_path, html_content):
     try:
-        with open(file=output_path, mode="a") as f:
+        with open(file=output_path, mode="w") as f:
             f.write(html_content)
-        return f"Content successfully appended to {output_path}"
+        # return f"Content successfully appended to {output_path}"
+        return f"Content successfully written to {output_path}"
     except FileNotFoundError:
         return f"Error: The file {output_path} is not found"
     except Exception as e:
@@ -145,32 +146,17 @@ def convert_markdown_to_html(input_file, output_file):
     '''1. Input: The user provides a Markdown file or string.'''
     input_markdown_content = read_markdown_file(input_file)
     
-    # print("DEBUG: len:", len(input_markdown_content))
-    # Empty file handling
-    if input_markdown_content == None:
-        output_html_response = write_html_file(
-        output_path=output_file,
-        html_content=None
-        )
-        return 0    
+    # ✅ Handle error early
+    if input_markdown_content.startswith("Error"):
+        return input_markdown_content
+    
+    input_markdown_content = parse_code_blocks(input_markdown_content)
+    
     '''2. Parsing: The Parser Module processes the input and breaks it
             down into structured components.'''
     headers = parse_headers(input_markdown_content)
     lists = parse_lists(input_markdown_content)
-    # paragraphs = parse_paragraphs(input_markdown_content)
-    inline_syntax = parse_inline_syntax(input_markdown_content)
-    code_blocks = parse_code_blocks(input_markdown_content)
-
-    # Combine parsed components (headers, lists, paragraphs, etc.)
-    # This could be a list or dictionary of components for latter use
-    parsed_data = {
-        'headers': headers,
-        'lists': lists,
-        # 'paragraphs': paragraphs,
-        'inline_syntax': inline_syntax,
-        'code_blocks': code_blocks
-    }
-    # print("DEBUG: parsed_data['paragraphs']:\n", parsed_data['paragraphs'])
+    paragraphs = parse_paragraphs(input_markdown_content)
 
     '''3. Conversion: The parsed data is passed to the Converter Module,
             which converts each element into its corresponding HTML tag.'''
@@ -183,26 +169,22 @@ def convert_markdown_to_html(input_file, output_file):
     html_content += start_head_structure() + "\n"
     html_content += add_meta_tags() + "\n"
     html_content += end_head_structure() + "\n"
-
     html_content += start_body_structure() + "\n"
     # print("Debug: \n\n", html_content)
     '''3. Continued: Conversion of parsed data to HTML tags'''
-    html_content += convert_headers(parsed_data['headers'])
+    html_content += convert_headers(headers)
     # print("Debug: \n\n", html_content)
-    html_content += convert_lists(parsed_data['lists'])
+    html_content += convert_lists(lists)
     # print("Debug: \n\n", html_content)
-    # html_content += convert_paragraphs(parsed_data['paragraphs'])
+    html_content += convert_paragraphs(paragraphs)
     # print("Debug: \n\n", html_content)
-    html_content += convert_inline_elements(parsed_data['inline_syntax'])
+    # html_content += convert_inline_elements(parsed_data['inline_syntax'])
     # print("Debug: \n\n", html_content)
-    html_content += convert_code(parsed_data['code_blocks'])
+    # html_content += convert_code(parsed_data['code_blocks'])
     # print("Debug: \n\n", html_content)
     html_content += end_body_structure() + "\n"
     # print("Debug: \n\n", html_content)
 
     '''5. Output: The final HTML document is written to a specified output
             file via the File I/O Module.'''
-    output_html_response = write_html_file(
-        output_path=output_file,
-        html_content=html_content
-        )
+    return write_html_file(output_file, html_content)

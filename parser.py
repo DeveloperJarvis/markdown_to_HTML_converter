@@ -92,9 +92,13 @@ def parse_headers(markdown_text):
             level = len(match.group(1))
             content = match.group(2)
             headers.append(
-                f"<h{level}>{content}</h{level}>"
+                # f"<h{level}>{content}</h{level}>"
+                {
+                    "level": level,
+                    "content": content
+                }
             )
-    return "\n".join(headers)
+    return headers
 
 # MARKDOWN LISTS
 ## MARKDOWN ORDERED LIST
@@ -144,8 +148,10 @@ def parse_lists(markdown_text):
     # Match list with numbers
     ordered_list_pattern = r'^\d+\.\s+(.*)$'
     # Match list with '*', '-', '+'
-    unordered_list_pattern = r'^\[\*\-\+]\s+(.*)$'
-    ordered_list = unordered_list = []
+    # unordered_list_pattern = r'^\[\*\-\+]\s+(.*)$'
+    unordered_list_pattern = r'^[-*+]\s+(.*)$'
+    ordered_list = []
+    unordered_list = []
     in_ordered_list = False
     in_unordered_list = False
     for line in markdown_text.splitlines():
@@ -170,7 +176,16 @@ def parse_lists(markdown_text):
                 unordered_list.append("</ul>")
                 in_unordered_list = False
     # Join the lists and return
-    return "\n".join(ordered_list + unordered_list)
+    if in_ordered_list:
+        ordered_list.append("</ol>")
+    if in_unordered_list:
+        unordered_list.append("</ul>")
+    result = "\n".join(filter(None, [
+        "\n".join(ordered_list),
+        "\n".join(unordered_list)
+    ]))
+
+    return result if result.strip() else ""
 
 # MARKDOWN LINEBREAKS
 '''
@@ -210,8 +225,8 @@ HTML
 # like bold, italics, links, images, etc.
 def parse_inline_syntax(markdown_text):
     # Bold (either **bold** or __bold__)
-    markdown_text = re.sub(r'(\*\*(.*?)\*\*)',r'<strong>\1</strong>',markdown_text)
-    markdown_text = re.sub(r'(__(.*?)__)',r'<strong>\1</strong>',markdown_text)
+    markdown_text = re.sub(r'(\*\*(.*?)\*\*)',r'<strong>\2</strong>',markdown_text)
+    markdown_text = re.sub(r'(__(.*?)__)',r'<strong>\2</strong>',markdown_text)
 
     # Italics (either *italic* or _italic_)
     markdown_text = re.sub(r'\*(.*?)\*', r'<em>\1</em>',markdown_text)
@@ -243,19 +258,21 @@ cont
 # parse_code_blocks(markdown_text): Identifies code blocks and
 # inline code.
 def parse_code_blocks(markdown_text):
-    # Inline code (matches text surrounded by backticks)
-    markdown_text = re.sub(
-        r'`(.*?)`',
-        r'<code>\1</code>',
-        markdown_text
-    )
-
+    # triple backticks first
     # Fenced code blocks (```)
     markdown_text = re.sub(
         r'```(.*?)```',
         r'<pre><code>\1</code></pre>',
         markdown_text,
         flags=re.DOTALL
+    )
+
+    # then inline
+    # Inline code (matches text surrounded by backticks)
+    markdown_text = re.sub(
+        r'`(.*?)`',
+        r'<code>\1</code>',
+        markdown_text
     )
 
     return markdown_text
@@ -284,13 +301,13 @@ def parse_paragraphs(markdown_text):
         if re.match(r'^(#{1,6})\s*(.*)$', p): 
             continue
         # skip inline code
-        elif re.match(r'`(.*?)`', p):
-            continue
-        # skip code blocks (triple backticks)
-        elif re.match(r'```(.*?)```', p):
-            continue
+        # elif re.match(r'`(.*?)`', p):
+        #     continue
+        # # skip code blocks (triple backticks)
+        # elif re.match(r'```(.*?)```', p):
+        #     continue
         # skip unordered lists
-        elif re.match(r'^\[\*\-\+]\s+(.*)$', p.strip()):
+        elif re.match(r'^[-*+]\s+(.*)$', p.strip()):
             continue
         # skip ordered lists
         elif re.match(r"^\d+\.\s+", p.strip()):
@@ -298,5 +315,9 @@ def parse_paragraphs(markdown_text):
         else:
             # Only wrap paragraphs tjat are not part of lists or code blocks
             if p.strip():
-                parsed_paragraphs.append(f"<p>{parse_inline_syntax(p.strip())}</p>")
+                # if "<code>" in p or "<pre>" in p:
+                if p.strip().startswith("<"):
+                    parsed_paragraphs.append(p)
+                else:
+                    parsed_paragraphs.append(f"<p>{parse_inline_syntax(p.strip())}</p>")
     return "\n".join(parsed_paragraphs)
